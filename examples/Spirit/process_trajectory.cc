@@ -37,7 +37,7 @@ using Eigen::MatrixXd;
 DEFINE_string(data_directory, "/home/shane/Drake_ws/dairlib/examples/Spirit/saved_trajectories/",
               "directory to save/read data");
 
-DEFINE_string(file_name, "bound_150cmmin_work","file to read data");
+DEFINE_string(file_name, "bound_150cmlow_mu_spine","file to read data");
 
 
 int main(int argc, char* argv[]) {
@@ -48,8 +48,17 @@ int main(int argc, char* argv[]) {
   auto scene_graph = std::make_unique<SceneGraph<double>>();
   Parser parser(plant.get());
   Parser parser_vis(plant_vis.get(), scene_graph.get());
-  std::string full_name =
-      dairlib::FindResourceOrThrow("examples/Spirit/spirit_drake.urdf");
+
+  bool spine = FLAGS_file_name.substr(FLAGS_file_name.size() - 5) == "spine";
+  std::string full_name;
+  if(!spine){
+    full_name =
+        dairlib::FindResourceOrThrow("examples/Spirit/spirit_drake.urdf");
+  }
+  else{
+    full_name =
+        dairlib::FindResourceOrThrow("examples/Spirit/spirit_spine_drake.urdf");
+  }
 
   parser.AddModelFromFile(full_name);
   parser_vis.AddModelFromFile(full_name);
@@ -62,11 +71,7 @@ int main(int argc, char* argv[]) {
   auto x_traj = old_traj.ReconstructStateTrajectory();
   auto u_traj = old_traj.ReconstructInputTrajectory();
 
-  std::cout<<"Electrical Work = " << dairlib::calcElectricalWork(*plant, x_trajs, u_traj) << std::endl;
-
-  std::cout<<"Integral of Actuation = " << dairlib::calcTorqueInt(*plant, u_traj) << std::endl;
-
-  std::cout<<"Integral of Velocity = " << dairlib::calcVelocityInt(*plant, x_trajs) << std::endl;
+  std::cout<<"Electrical Work = " << dairlib::calcElectricalWork(*plant, x_trajs, u_traj, spine) << std::endl;
 
   dairlib::runAnimate( std::move(plant), plant_vis.get(), std::move(scene_graph), x_traj,0.25);
 }
